@@ -11,6 +11,7 @@ import sourcemaps from "rollup-plugin-sourcemaps";
 import shim from "rollup-plugin-shim";
 import path from "path";
 import inject from "rollup-plugin-inject";
+import alias from "rollup-plugin-alias";
 
 const pkg = require("./package.json");
 const depNames = Object.keys(pkg.dependencies);
@@ -60,7 +61,7 @@ export function nodeConfig({ test = false, production = false } = {}) {
 
   if (test) {
     // entry point is every test file
-    baseConfig.input = "dist-esm/test/**/*.spec.js";
+    baseConfig.input = "dist-esm/test/*.spec.js";
     baseConfig.plugins.unshift(multiEntry({ exports: false }));
 
     // different output file
@@ -84,9 +85,31 @@ export function nodeConfig({ test = false, production = false } = {}) {
 }
 
 export function browserConfig({ test = false, production = false } = {}) {
+  const externalNodeBuiltins = [
+    "os",
+    "events",
+    "net",
+    "tls",
+    "path",
+    "fs",
+    "url",
+    "util",
+    "stream",
+    "punycode",
+    "http",
+    "https",
+    "assert",
+    "crypto",
+    "timers",
+    "string_decoder",
+    "zlib",
+    "dns",
+    "@azure/ms-rest-js"
+  ];
+
   const baseConfig = {
     input: input,
-    external: [],
+    external: depNames.concat(externalNodeBuiltins),
     output: {
       file: "browser/service-bus.js",
       format: "umd",
@@ -125,11 +148,19 @@ export function browserConfig({ test = false, production = false } = {}) {
       }),
 
       nodeResolve({
-        mainFields: ['module', 'browser'],
+        mainFields: ["module", "browser"],
         preferBuiltins: false
       }),
       cjs({
-        namedExports: { events: ["EventEmitter"] }
+        namedExports: {
+          chai: ["should"],
+          assert: ["equal", "deepEqual", "notEqual"],
+          debugModule: ["debug"]
+        }
+      }),
+
+      alias({
+        debugModule: "node_modules/debug/dist/debug.js"
       }),
 
       // rhea and rhea-promise use the Buffer global which requires
@@ -148,7 +179,7 @@ export function browserConfig({ test = false, production = false } = {}) {
   baseConfig.onwarn = ignoreKnownWarnings;
 
   if (test) {
-    baseConfig.input = "dist-esm/test/**/*.spec.js";
+    baseConfig.input = "dist-esm/test/*.spec.js";
     baseConfig.plugins.unshift(multiEntry({ exports: false }));
     baseConfig.output.file = "test-browser/index.js";
   } else if (production) {
