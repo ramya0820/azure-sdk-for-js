@@ -13,12 +13,8 @@ import inject from "rollup-plugin-inject";
 import shim from "rollup-plugin-shim";
 import json from "rollup-plugin-json";
 
-import path from "path";
-
 const pkg = require("./package.json");
-const depNames = Object.keys(pkg.dependencies).concat(
-  Object.keys(pkg.peerDependencies)
-);
+const depNames = Object.keys(pkg.dependencies).concat(Object.keys(pkg.peerDependencies));
 
 const input = "dist-esm/src/index.js";
 const production = process.env.NODE_ENV === "production";
