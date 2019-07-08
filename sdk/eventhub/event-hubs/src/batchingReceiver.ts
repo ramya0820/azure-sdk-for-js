@@ -182,7 +182,7 @@ export class BatchingReceiver extends EventHubReceiver {
           cleanUpBeforeReturn(this._receiver || context.receiver!);
 
           const receiverError = context.receiver && context.receiver.error;
-          let error = new MessagingError("An error occurred while receiving messages.");
+          let error = new MessagingError("An error occurred while receiving message(s).");
           if (receiverError) {
             error = translate(receiverError);
             if (error.name === "OperationTimeoutError") {
