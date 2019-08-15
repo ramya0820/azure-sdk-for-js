@@ -14,12 +14,11 @@ async function main(): Promise<void> {
     while (1) {
       const messages = await receiver.receiveMessages(250);
 
-      for (let i = 0; i < messages.length; i++) {
-        const msg: ServiceBusMessage = messages[i];
+      asyncForEach(messages, async (msg: ServiceBusMessage) => {
         allMessageCounter++;
         console.log("received msg: ", allMessageCounter);
         await msg.complete();
-      }
+      });
     }
   } finally {
     console.timeEnd("receive");
@@ -27,6 +26,11 @@ async function main(): Promise<void> {
   }
 }
 
+async function asyncForEach(array: any, callback: any): Promise<void> {
+  for (let i = 0; i < array.length; i++) {
+    await callback(array[i], i, array);
+  }
+}
 main().catch((err) => {
   console.log(err);
 });
