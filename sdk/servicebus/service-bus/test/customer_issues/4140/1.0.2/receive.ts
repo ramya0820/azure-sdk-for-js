@@ -14,11 +14,12 @@ async function main(): Promise<void> {
     while (1) {
       const messages = await receiver.receiveMessages(250);
 
-      messages.forEach(async (msg: ServiceBusMessage) => {
+      for (let i = 0; i < messages.length; i++) {
+        const msg: ServiceBusMessage = messages[i];
         allMessageCounter++;
         console.log("received msg: ", allMessageCounter);
         await msg.complete();
-      });
+      }
     }
   } finally {
     console.timeEnd("receive");
