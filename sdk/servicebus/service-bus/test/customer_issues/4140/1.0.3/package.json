@@ -8,7 +8,7 @@
   "license": "MIT",
   "dependencies": {
     "@azure/ms-rest-nodeauth": "^2.0.1",
-    "@azure/service-bus": "^1.0.3",
+    "@azure/service-bus": "1.0.3",
     "https-proxy-agent": "^2.2.1",
     "ws": "^7.0.0"
   },
