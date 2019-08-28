@@ -4,8 +4,6 @@ import { ServiceClientOptions } from "@azure/core-http";
 import chai from "chai";
 import chaiAsPromised from "chai-as-promised";
 chai.use(chaiAsPromised);
-import { EnvVarKeys, getEnvVars } from "./utils/envVarUtils";
-const env = getEnvVars();
 const should = chai.should();
 
 let entityType: any;
@@ -15,7 +13,7 @@ const clientOptions: ServiceClientOptions = {
 };
 
 const serviceBusAtomManagementClient: ServiceBusAtomManagementClient = new ServiceBusAtomManagementClient(
-  env[EnvVarKeys.SERVICEBUS_CONNECTION_STRING],
+  "Endpoint=sb://servicebuslocalperftestspremium1.servicebus.windows.net/;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=Jw0ekInJiwyO/SnZ4NoZdgYizYVciY9d7HvUdxe8E0U=",
   clientOptions
 );
 
@@ -28,7 +26,7 @@ function prettyPrint(result: any) {
 
 entityType = "Queue";
 describe(`Atom management - Basic CRUD on ${entityType} entities`, function(): void {
-  it(`Creates a non-existent ${entityType} entity successfully #RunInBrowser`, async () => {
+  it.only(`Creates a non-existent ${entityType} entity successfully #RunInBrowser`, async () => {
     await serviceBusAtomManagementClient.deleteQueue(alwaysBeExistingQueue);
 
     const response = await serviceBusAtomManagementClient.createQueue(alwaysBeExistingQueue, {
