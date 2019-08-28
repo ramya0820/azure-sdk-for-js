@@ -79,9 +79,10 @@ export class AtomHandler {
 
     const serializer = new XMLSerializer();
     const dom = this.buildNode(content, "content")[0];
-    return (
-      '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' + serializer.serializeToString(dom)
-    );
+    const result =
+      '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' + serializer.serializeToString(dom);
+    console.log(result);
+    return result;
   }
 
   buildNode(obj: any, elementName: string): Node[] {

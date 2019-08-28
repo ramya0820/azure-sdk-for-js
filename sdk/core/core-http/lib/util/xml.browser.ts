@@ -148,8 +148,11 @@ function buildNode(obj: any, elementName: string): Node[] {
   }
 }
 
-export function parseAtomXML(body: any): any {
+export function parseAtomXmlDataToJson(body: any): any {
   const dom = parser.parseFromString(body, "text/xml");
   throwIfError(dom);
-  return domToObject(dom.childNodes[0]);
+  const result = domToObject(dom);
+  console.log(body);
+  console.log(result);
+  return result;
 }
