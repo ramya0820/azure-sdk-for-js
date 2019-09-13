@@ -125,6 +125,7 @@ export interface CreateKeyOptions {
    * @member {msRest.RequestOptionsBase} [requestOptions] Options for this request
    */
   requestOptions?: msRest.RequestOptionsBase;
+  keySize?: number;
 }
 
 /**
@@ -149,7 +150,7 @@ export interface CreateEcKeyOptions extends CreateKeyOptions {
 /**
  * @interface
  * An interface representing the optional parameters that can be
- * passed to createEcKey
+ * passed to createRsaKey
  */
 export interface CreateRsaKeyOptions extends CreateKeyOptions {
   /**
@@ -167,7 +168,7 @@ export interface CreateRsaKeyOptions extends CreateKeyOptions {
 /**
  * @interface
  * An interface representing the optional parameters that can be
- * passed to createKey
+ * passed to importKey
  */
 export interface ImportKeyOptions {
   /**
@@ -200,8 +201,7 @@ export interface ImportKeyOptions {
 
 /**
  * @interface
- * An interface representing KeyVaultClientUpdateKeyOptionalParams.
- * Optional Parameters.
+ * An interface representing optional parameters that can be passed to updateKey.
  */
 export interface UpdateKeyOptions {
   /**
@@ -234,8 +234,7 @@ export interface UpdateKeyOptions {
 
 /**
  * @interface
- * An interface representing KeyClientGetKeyOptionalParams.
- * Optional Parameters.
+ * An interface representing optional parameters that can be passed to getKey.
  */
 export interface GetKeyOptions {
   /**
@@ -252,7 +251,6 @@ export interface GetKeyOptions {
 /**
  * @interface
  * An interface representing optional parameters for KeyClient paged operations.
- * Optional Parameters.
  */
 export interface ListKeysOptions {
   /**

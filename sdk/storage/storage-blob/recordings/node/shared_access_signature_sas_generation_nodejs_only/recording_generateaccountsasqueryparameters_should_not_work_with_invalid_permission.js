@@ -1,28 +1,30 @@
 let nock = require('nock');
 
-module.exports.testInfo = {"tmr":"2019-06-15T08:19:42.538Z"}
+module.exports.testInfo = {"tmr":"2019-09-06T09:29:06.044Z"}
 
 nock('https://fakestorageaccount.blob.core.windows.net:443', {"encodedQueryParams":true})
   .get('/')
   .query(true)
-  .reply(403, "﻿<?xml version=\"1.0\" encoding=\"utf-8\"?><Error><Code>AuthorizationPermissionMismatch</Code><Message>This request is not authorized to perform this operation using this permission.\nRequestId:047ceace-101e-00df-3053-232bc5000000\nTime:2019-06-15T08:19:42.2299622Z</Message></Error>", [ 'Content-Length',
+  .reply(403, "﻿<?xml version=\"1.0\" encoding=\"utf-8\"?><Error><Code>AuthorizationPermissionMismatch</Code><Message>This request is not authorized to perform this operation using this permission.\nRequestId:a6e98f1a-b01e-0096-6c95-64fe52000000\nTime:2019-09-06T09:29:06.3339447Z</Message></Error>", [ 'Content-Length',
   '279',
   'Content-Type',
   'application/xml',
   'Server',
   'Windows-Azure-Blob/1.0 Microsoft-HTTPAPI/2.0',
   'x-ms-request-id',
-  '047ceace-101e-00df-3053-232bc5000000',
+  'a6e98f1a-b01e-0096-6c95-64fe52000000',
+  'x-ms-client-request-id',
+  'f8c1b5f6-c0fe-4ad9-8153-69feea81a08a',
   'x-ms-version',
-  '2018-03-28',
+  '2019-02-02',
   'x-ms-error-code',
   'AuthorizationPermissionMismatch',
   'Access-Control-Expose-Headers',
-  'x-ms-request-id,Server,x-ms-version,x-ms-error-code,Content-Length,Date,Transfer-Encoding',
+  'x-ms-request-id,x-ms-client-request-id,Server,x-ms-version,x-ms-error-code,Content-Length,Date,Transfer-Encoding,content-md5,x-ms-content-crc64',
   'Access-Control-Allow-Origin',
   '*',
   'Date',
-  'Sat, 15 Jun 2019 08:19:42 GMT',
+  'Fri, 06 Sep 2019 09:29:05 GMT',
   'Connection',
   'close' ]);
 

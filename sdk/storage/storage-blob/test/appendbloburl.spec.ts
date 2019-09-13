@@ -1,11 +1,12 @@
 import * as assert from "assert";
+import * as dotenv from "dotenv";
 
 import { Aborter } from "../src/Aborter";
 import { AppendBlobURL } from "../src/AppendBlobURL";
 import { ContainerURL } from "../src/ContainerURL";
 import { bodyToString, getBSU } from "./utils";
 import { record } from "./utils/recorder";
-import * as dotenv from "dotenv";
+
 dotenv.config({ path: "../.env" });
 
 describe("AppendBlobURL", () => {
@@ -70,5 +71,24 @@ describe("AppendBlobURL", () => {
     const downloadResponse = await appendBlobURL.download(Aborter.none, 0);
     assert.equal(await bodyToString(downloadResponse, content.length), content);
     assert.equal(downloadResponse.contentLength!, content.length);
+  });
+
+  it("appendBlock with invalid CRC64 should fail", async () => {
+    await appendBlobURL.create(Aborter.none);
+
+    const content = "Hello World!";
+    let exceptionCaught = false;
+    try
+    {
+      await appendBlobURL.appendBlock(Aborter.none, content, content.length, {
+        transactionalContentCrc64: new Uint8Array([1, 2, 3, 4, 5, 6, 7, 8])
+      });
+    } catch (err) {
+      if (err instanceof Error && err.message.indexOf("Crc64Mismatch") != -1) {
+        exceptionCaught = true;
+      }
+    }
+
+    assert.ok(exceptionCaught);
   });
 });

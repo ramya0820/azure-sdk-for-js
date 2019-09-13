@@ -4,7 +4,7 @@
 import { EnvironmentCredential } from "../../src";
 import { MockAuthHttpClient, assertClientCredentials } from "../authTestUtils";
 
-describe("EnvironmentCredential", function () {
+describe("EnvironmentCredential", function() {
   it("finds and uses client credential environment variables", async () => {
     process.env.AZURE_TENANT_ID = "tenant";
     process.env.AZURE_CLIENT_ID = "client";
@@ -19,7 +19,7 @@ describe("EnvironmentCredential", function () {
     delete process.env.AZURE_CLIENT_ID;
     delete process.env.AZURE_CLIENT_SECRET;
 
-    const authRequest = await mockHttpClient.getAuthRequest();
+    const authRequest = mockHttpClient.requests[0];
     assertClientCredentials(authRequest, "tenant", "client", "secret");
   });
 });

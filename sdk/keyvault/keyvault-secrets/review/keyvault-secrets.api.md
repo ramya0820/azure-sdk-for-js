@@ -10,9 +10,10 @@ import * as msRest from '@azure/core-http';
 import { PagedAsyncIterableIterator } from '@azure/core-paging';
 import { PageSettings } from '@azure/core-paging';
 import { RequestOptionsBase } from '@azure/core-http';
-import { ServiceClientCredentials } from '@azure/core-http';
 import { ServiceClientOptions } from '@azure/core-http';
+import { SupportedPlugins } from '@azure/core-http';
 import { TokenCredential } from '@azure/core-http';
+import { TracerProxy } from '@azure/core-http';
 
 // @public
 export interface DeletedSecret extends Secret {
@@ -96,11 +97,11 @@ export interface SecretAttributes extends ParsedKeyVaultEntityIdentifier {
 
 // @public
 export class SecretsClient {
-    constructor(url: string, credential: ServiceClientCredentials | TokenCredential, pipelineOrOptions?: ServiceClientOptions | NewPipelineOptions);
+    constructor(url: string, credential: TokenCredential, pipelineOrOptions?: ServiceClientOptions | NewPipelineOptions);
     backupSecret(secretName: string, options?: RequestOptionsBase): Promise<Uint8Array>;
-    protected readonly credential: ServiceClientCredentials | TokenCredential;
+    protected readonly credential: TokenCredential;
     deleteSecret(secretName: string, options?: RequestOptionsBase): Promise<DeletedSecret>;
-    static getDefaultPipeline(credential: ServiceClientCredentials | TokenCredential, pipelineOptions?: NewPipelineOptions): ServiceClientOptions;
+    static getDefaultPipeline(credential: TokenCredential, pipelineOptions?: NewPipelineOptions): ServiceClientOptions;
     getDeletedSecret(secretName: string, options?: RequestOptionsBase): Promise<DeletedSecret>;
     getSecret(secretName: string, options?: GetSecretOptions): Promise<Secret>;
     listDeletedSecrets(options?: GetSecretsOptions): PagedAsyncIterableIterator<SecretAttributes, SecretAttributes[]>;
@@ -127,11 +128,15 @@ export interface SetSecretOptions {
     };
 }
 
+export { SupportedPlugins }
+
 // @public (undocumented)
 export interface TelemetryOptions {
     // (undocumented)
     value: string;
 }
+
+export { TracerProxy }
 
 // @public
 export interface UpdateSecretOptions {

@@ -23,8 +23,8 @@ import {
   RetryConfig,
   RetryOperationType,
   Constants,
-  randomNumberFromInterval
-} from "@azure/amqp-common";
+  delay
+} from "@azure/core-amqp";
 import {
   SendableMessageInfo,
   toAmqpMessage,
@@ -253,7 +253,7 @@ export class MessageSender extends LinkEntity {
    */
   private _trySend(encodedMessage: Buffer, sendBatch?: boolean): Promise<void> {
     const sendEventPromise = () =>
-      new Promise<void>((resolve, reject) => {
+      new Promise<void>(async (resolve, reject) => {
         let waitTimer: any;
         log.sender(
           "[%s] Sender '%s', credit: %d available: %d",
@@ -262,6 +262,23 @@ export class MessageSender extends LinkEntity {
           this._sender!.credit,
           this._sender!.session.outgoing.available()
         );
+        if (!this._sender!.sendable()) {
+          log.sender(
+            "[%s] Sender '%s', waiting for 1 second for sender to become sendable",
+            this._context.namespace.connectionId,
+            this.name
+          );
+
+          await delay(1000);
+
+          log.sender(
+            "[%s] Sender '%s' after waiting for a second, credit: %d available: %d",
+            this._context.namespace.connectionId,
+            this.name,
+            this._sender!.credit,
+            this._sender!.session.outgoing.available()
+          );
+        }
         if (this._sender!.sendable()) {
           let onRejected: Func<EventContext, void>;
           let onReleased: Func<EventContext, void>;
@@ -356,10 +373,7 @@ export class MessageSender extends LinkEntity {
           this._sender!.on(SenderEvents.rejected, onRejected);
           this._sender!.on(SenderEvents.modified, onModified);
           this._sender!.on(SenderEvents.released, onReleased);
-          waitTimer = setTimeout(
-            actionAfterTimeout,
-            Constants.defaultOperationTimeoutInSeconds * 1000
-          );
+          waitTimer = setTimeout(actionAfterTimeout, Constants.defaultOperationTimeoutInMs);
           try {
             const delivery = this._sender!.send(
               encodedMessage,
@@ -390,13 +404,14 @@ export class MessageSender extends LinkEntity {
         }
       });
 
-    const jitterInSeconds = randomNumberFromInterval(1, 4);
     const config: RetryConfig<void> = {
       operation: sendEventPromise,
       connectionId: this._context.namespace.connectionId!,
       operationType: RetryOperationType.sendMessage,
-      times: Constants.defaultRetryAttempts,
-      delayInSeconds: Constants.defaultDelayBetweenOperationRetriesInSeconds + jitterInSeconds
+      retryOptions: {
+        maxRetries: Constants.defaultMaxRetries,
+        retryDelayInMs: Constants.defaultDelayBetweenOperationRetriesInMs
+      }
     };
 
     return retry<void>(config);
@@ -537,9 +552,8 @@ export class MessageSender extends LinkEntity {
             operation: () => this._init(options),
             connectionId: this._context.namespace.connectionId!,
             operationType: RetryOperationType.senderLink,
-            times: Constants.defaultConnectionRetryAttempts,
-            connectionHost: this._context.namespace.config.host,
-            delayInSeconds: 15
+            retryOptions: { maxRetries: Constants.defaultMaxRetries, retryDelayInMs: 15000 },
+            connectionHost: this._context.namespace.config.host
           };
           return retry<void>(config);
         });

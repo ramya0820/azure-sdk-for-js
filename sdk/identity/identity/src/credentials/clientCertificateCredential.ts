@@ -61,9 +61,7 @@ export class ClientCertificateCredential implements TokenCredential {
     const matchCert = this.certificateString.match(certificatePattern);
     const publicKey = matchCert ? matchCert[3] : "";
     if (!publicKey) {
-      throw new Error(
-        "The file at the specified path does not contain a PEM-encoded certificate."
-      );
+      throw new Error("The file at the specified path does not contain a PEM-encoded certificate.");
     }
 
     this.certificateThumbprint = createHash("sha1")
@@ -84,7 +82,7 @@ export class ClientCertificateCredential implements TokenCredential {
    * @param options The options used to configure any requests this
    *                TokenCredential implementation might make.
    */
-  public getToken(
+  public async getToken(
     scopes: string | string[],
     options?: GetTokenOptions
   ): Promise<AccessToken | null> {
@@ -131,6 +129,7 @@ export class ClientCertificateCredential implements TokenCredential {
       abortSignal: options && options.abortSignal
     });
 
-    return this.identityClient.sendTokenRequest(webResource);
+    const tokenResponse = await this.identityClient.sendTokenRequest(webResource);
+    return (tokenResponse && tokenResponse.accessToken) || null;
   }
 }

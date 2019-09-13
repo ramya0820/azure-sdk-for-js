@@ -23,33 +23,47 @@ import { EnvironmentCredential } from "@azure/identity";
 const env = getEnvVars();
 
 describe("Create EventHubClient #RunnableInBrowser", function(): void {
-  it("throws when it cannot find the Event Hub path", function(): void {
+  it("throws when it cannot find the Event Hub name", function(): void {
     const connectionString = "Endpoint=sb://abc";
     const test = function(): EventHubClient {
       return new EventHubClient(connectionString);
     };
     test.should.throw(
       Error,
-      `Either provide "path" or the "connectionString": "${connectionString}", ` +
-        `must contain EntityPath="<path-to-the-entity>".`
+      `Either provide "eventHubName" or the "connectionString": "${connectionString}", ` +
+        `must contain "EntityPath=<your-event-hub-name>".`
+    );
+  });
+
+  it("throws when EntityPath in Connection string doesn't match with event hub name parameter", function(): void {
+    const connectionString =
+      "Endpoint=sb://a;SharedAccessKeyName=b;SharedAccessKey=c=;EntityPath=my-event-hub-name";
+    const eventHubName = "event-hub-name";
+    const test = function(): EventHubClient {
+      return new EventHubClient(connectionString, eventHubName);
+    };
+    test.should.throw(
+      Error,
+      `The entity path "my-event-hub-name" in connectionString: "${connectionString}" ` +
+        `doesn't match with eventHubName: "${eventHubName}".`
     );
   });
 
   it("creates an EventHubClient from a connection string", function(): void {
     const client = new EventHubClient(
-      "Endpoint=sb://a;SharedAccessKeyName=b;SharedAccessKey=c;EntityPath=my-event-hub-path"
+      "Endpoint=sb://a;SharedAccessKeyName=b;SharedAccessKey=c;EntityPath=my-event-hub-name"
     );
     client.should.be.an.instanceof(EventHubClient);
-    should.equal(client.eventHubName, "my-event-hub-path");
+    should.equal(client.eventHubName, "my-event-hub-name");
   });
 
-  it("creates an EventHubClient from a connection string and an Event Hub path", function(): void {
+  it("creates an EventHubClient from a connection string and an Event Hub name", function(): void {
     const client = new EventHubClient(
       "Endpoint=sb://a;SharedAccessKeyName=b;SharedAccessKey=c",
-      "my-event-hub-path"
+      "my-event-hub-name"
     );
     client.should.be.an.instanceof(EventHubClient);
-    should.equal(client.eventHubName, "my-event-hub-path");
+    should.equal(client.eventHubName, "my-event-hub-name");
   });
 
   it("creates an EventHubClient from a custom TokenCredential", function(): void {
@@ -61,9 +75,9 @@ describe("Create EventHubClient #RunnableInBrowser", function(): void {
         };
       }
     };
-    const client = new EventHubClient("abc", "my-event-hub-path", dummyCredential);
+    const client = new EventHubClient("abc","my-event-hub-name", dummyCredential);
     client.should.be.an.instanceof(EventHubClient);
-    should.equal(client.eventHubName, "my-event-hub-path");
+    should.equal(client.eventHubName, "my-event-hub-name");
   });
 
   it("creates an EventHubClient from an Azure.Identity credential", async function(): Promise<
@@ -82,12 +96,15 @@ describe("Create EventHubClient #RunnableInBrowser", function(): void {
       "define AZURE_CLIENT_SECRET in your environment before running integration tests."
     );
     should.exist(
-      env[EnvVarKeys.ENDPOINT],
-      "define ENDPOINT in your environment before running integration tests."
+      env[EnvVarKeys.EVENTHUB_CONNECTION_STRING],
+      "define EVENTHUB_CONNECTION_STRING in your environment before running integration tests."
     );
 
+    // This is of the form <your-namespace>.servicebus.windows.net
+    const endpoint = (env.EVENTHUB_CONNECTION_STRING.match("Endpoint=sb://(.*)/;") || "")[1];
+
     const credential = new EnvironmentCredential();
-    const client = new EventHubClient(env.ENDPOINT, env.EVENTHUB_NAME, credential);
+    const client = new EventHubClient(endpoint, env.EVENTHUB_NAME, credential);
 
     // Extra check involving actual call to the service to ensure this works
     const hubInfo = await client.getProperties();

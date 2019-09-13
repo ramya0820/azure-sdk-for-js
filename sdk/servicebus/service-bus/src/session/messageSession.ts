@@ -7,7 +7,7 @@ import {
   ErrorNameConditionMapper,
   MessagingError,
   Func
-} from "@azure/amqp-common";
+} from "@azure/core-amqp";
 import {
   Receiver,
   OnAmqpEvent,
@@ -30,7 +30,6 @@ import { ClientEntityContext } from "../clientEntityContext";
 import { convertTicksToDate, calculateRenewAfterDuration } from "../util/utils";
 import { throwErrorIfConnectionClosed } from "../util/errors";
 import { ServiceBusMessage, DispositionType, ReceiveMode } from "../serviceBusMessage";
-import { messageDispositionTimeout } from "../util/constants";
 
 /**
  * Enum to denote who is calling the session receiver
@@ -282,9 +281,7 @@ export class MessageSession extends LinkEntity {
             this.sessionId!,
             this.name,
             {
-              delayInSeconds: 0,
-              timeoutInSeconds: 10,
-              times: 4
+              timeoutInMs: 10000
             }
           );
           log.receiver(
@@ -556,9 +553,7 @@ export class MessageSession extends LinkEntity {
         const sbError = translate(receiverError);
         if (sbError.name === "SessionLockLostError") {
           this._context.expiredMessageSessions[this.sessionId!] = true;
-          sbError.message = `The session lock has expired on the session with id ${
-            this.sessionId
-          }.`;
+          sbError.message = `The session lock has expired on the session with id ${this.sessionId}.`;
         }
         log.error(
           "[%s] An error occurred for Receiver '%s': %O.",
@@ -781,9 +776,7 @@ export class MessageSession extends LinkEntity {
         this._newMessageReceivedTimer = setTimeout(async () => {
           const msg =
             `MessageSession '${this.sessionId}' with name '${this.name}' did not receive ` +
-            `any messages in the last ${
-              this.newMessageWaitTimeoutInSeconds
-            } seconds. Hence closing it.`;
+            `any messages in the last ${this.newMessageWaitTimeoutInSeconds} seconds. Hence closing it.`;
           log.error("[%s] %s", this._context.namespace.connectionId, msg);
 
           if (this.callee === SessionCallee.sessionManager) {
@@ -936,14 +929,14 @@ export class MessageSession extends LinkEntity {
     idleTimeoutInSeconds?: number
   ): Promise<ServiceBusMessage[]> {
     if (idleTimeoutInSeconds == null) {
-      idleTimeoutInSeconds = Constants.defaultOperationTimeoutInSeconds;
+      idleTimeoutInSeconds = Constants.defaultOperationTimeoutInMs / 1000;
     }
 
     const brokeredMessages: ServiceBusMessage[] = [];
     this.isReceivingMessages = true;
 
     return new Promise<ServiceBusMessage[]>((resolve, reject) => {
-      let firstMessageWaitTimer: any;
+      let totalWaitTimer: NodeJS.Timer | undefined;
 
       const setnewMessageWaitTimeoutInSeconds = (value?: number): void => {
         this.newMessageWaitTimeoutInSeconds = value;
@@ -981,10 +974,6 @@ export class MessageSession extends LinkEntity {
 
       // Action to be performed on the "message" event.
       const onReceiveMessage: OnAmqpEventAsPromise = async (context: EventContext) => {
-        if (firstMessageWaitTimer) {
-          clearTimeout(firstMessageWaitTimer);
-          firstMessageWaitTimer = undefined;
-        }
         resetTimerOnNewMessageReceived();
         try {
           const data: ServiceBusMessage = new ServiceBusMessage(
@@ -1021,8 +1010,8 @@ export class MessageSession extends LinkEntity {
         // Resetting the newMessageWaitTimeoutInSeconds to undefined since we are done receiving
         // a batch of messages.
         setnewMessageWaitTimeoutInSeconds();
-        if (firstMessageWaitTimer) {
-          clearTimeout(firstMessageWaitTimer);
+        if (totalWaitTimer) {
+          clearTimeout(totalWaitTimer);
         }
         // Removing listeners, so that the next receiveMessages() call can set them again.
         if (this._receiver) {
@@ -1037,8 +1026,8 @@ export class MessageSession extends LinkEntity {
         if (this._newMessageReceivedTimer) {
           clearTimeout(this._newMessageReceivedTimer);
         }
-        if (firstMessageWaitTimer) {
-          clearTimeout(firstMessageWaitTimer);
+        if (totalWaitTimer) {
+          clearTimeout(totalWaitTimer);
         }
 
         // Unsetting the newMessageWaitTimeoutInSeconds to undefined since we are done receiving
@@ -1088,9 +1077,7 @@ export class MessageSession extends LinkEntity {
           this._newMessageReceivedTimer = setTimeout(async () => {
             const msg =
               `MessageSession '${this.sessionId}' with name '${this.name}' did not receive ` +
-              `any messages in the last ${
-                this.newMessageWaitTimeoutInSeconds
-              } seconds. Hence closing it.`;
+              `any messages in the last ${this.newMessageWaitTimeoutInSeconds} seconds. Hence closing it.`;
             log.error("[%s] %s", this._context.namespace.connectionId, msg);
             finalAction();
             if (this.callee === SessionCallee.sessionManager) {
@@ -1115,7 +1102,7 @@ export class MessageSession extends LinkEntity {
         let msg: string = "[%s] Setting the wait timer for %d seconds for receiver '%s'.";
         if (reuse) msg += " Receiver link already present, hence reusing it.";
         log.batching(msg, this._context.namespace.connectionId, idleTimeoutInSeconds, this.name);
-        firstMessageWaitTimer = setTimeout(
+        totalWaitTimer = setTimeout(
           actionAfterWaitTimeout,
           (idleTimeoutInSeconds as number) * 1000
         );
@@ -1159,7 +1146,7 @@ export class MessageSession extends LinkEntity {
             "Hence rejecting the promise with timeout error",
           this._context.namespace.connectionId,
           delivery.id,
-          messageDispositionTimeout
+          Constants.defaultOperationTimeoutInMs
         );
 
         const e: AmqpError = {
@@ -1169,7 +1156,7 @@ export class MessageSession extends LinkEntity {
             "message may or may not be successful"
         };
         return reject(translate(e));
-      }, messageDispositionTimeout);
+      }, Constants.defaultOperationTimeoutInMs);
       this._deliveryDispositionMap.set(delivery.id, {
         resolve: resolve,
         reject: reject,

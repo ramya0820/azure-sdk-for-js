@@ -8,7 +8,7 @@ import assert from "assert";
 import { ClientCertificateCredential } from "../../src";
 import { MockAuthHttpClient } from "../authTestUtils";
 
-describe("ClientCertificateCredential", function () {
+describe("ClientCertificateCredential", function() {
   it("loads a PEM-formatted certificate from a file", () => {
     const credential = new ClientCertificateCredential(
       "tenant",
@@ -48,7 +48,7 @@ describe("ClientCertificateCredential", function () {
 
     await credential.getToken("scope");
 
-    const authRequest = await mockHttpClient.getAuthRequest();
+    const authRequest = mockHttpClient.requests[0];
     if (!authRequest) {
       assert.fail("No authentication request was intercepted");
     } else {
