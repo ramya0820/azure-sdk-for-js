@@ -92,16 +92,16 @@ export class ServiceBusClient {
    */
   constructor(
     configOrConnectionString: string | ConnectionConfig,
-    credentialOrOptions?: TokenCredential | ServiceBusClientOptions,
+    credentialOrOptions?: SharedKeyCredential | TokenCredential | ServiceBusClientOptions,
     options?: ServiceBusClientOptions
   ) {
-    let config;
-    let credential;
+    let config: ConnectionConfig | undefined = undefined;
+    let credential: SharedKeyCredential | TokenCredential | undefined = undefined;
     if (!options) options = {};
 
     if (typeof configOrConnectionString === "string") {
       // connectionString and options based constructor was invoked
-      options = credentialOrOptions;
+      options = credentialOrOptions as ServiceBusClientOptions;
 
       config = ConnectionConfig.create(configOrConnectionString);
       config.webSocket = options && options.webSocket;
@@ -112,6 +112,13 @@ export class ServiceBusClient {
       credential = new SharedKeyCredential(config.sharedAccessKeyName, config.sharedAccessKey);
 
       ConnectionConfig.validate(config);
+    }
+
+    // Fallback code that executes as if config, credentials and options based constructor was invoked
+    if (config == undefined || credential == undefined) {
+      throw new Error(
+        "Invalid constructor options have been supplied. Please check and try again."
+      );
     }
 
     this.name = config.endpoint;
